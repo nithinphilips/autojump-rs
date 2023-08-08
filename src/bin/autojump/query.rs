@@ -58,7 +58,7 @@ pub fn complete(config: &Config, needles: Vec<String>) {
 
 pub fn query(config: &Config, needles: Vec<String>) {
     let needles: Vec<_> = needles.iter().map(|s| s.as_str()).collect();
-    let result = match prepare_query(&needles, true, 1, true) {
+    let result = match prepare_query(&needles, false, 1, true) {
         Query::Execute(query) => do_query(config, query).iter().next().unwrap().clone(),
         Query::EarlyResult(path) => path,
     };
@@ -128,19 +128,22 @@ fn do_query<'a>(config: &Config, query: QueryConfig<'a>) -> Vec<path::PathBuf> {
     let matcher = Matcher::new_smartcase(needles);
     let result = matcher.execute(&entries);
 
+    // TODO: convert cwd to cygwin path
+    // TODO: check_existence should be aware of cygwin paths
+
     // Filter out cwd and (when requested) non-existent directories.
     let cwd: Option<_> = match env::current_dir() {
         Ok(cwd) => Some(cwd),
         Err(_) => None,
     };
     let mut result: Vec<_> = result
-        .filter(|p| {
-            if let Some(cwd) = &cwd {
-                &p.path != cwd
-            } else {
-                true
-            }
-        })
+//        .filter(|p| {
+//            if let Some(cwd) = &cwd {
+//                &p.path != cwd
+//            } else {
+//                true
+//            }
+//        })
         .filter(|p| {
             if check_existence {
                 p.path.exists()
